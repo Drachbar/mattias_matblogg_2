@@ -1,0 +1,75 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.0.5'
+	id 'io.spring.dependency-management' version '1.1.0'
+	id "com.github.node-gradle.node" version "3.1.0"
+}
+
+group = 'se.drachbar'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+node {
+	version = 'auto' // Använd den lokalt installerade Node.js-versionen
+	npmVersion = '9.6.2' // Använd den lokalt installerade npm-versionen
+	download = false // Ladda inte ner en separat Node.js
+	workDir = file("${project.projectDir}/frontend") // Ange katalogen för ditt Angular-projekt
+	nodeModulesDir = file("${project.projectDir}/frontend/node_modules") // Lägg till denna rad
+}
+
+
+tasks.named('npm_install') {
+	workingDir = file("${project.projectDir}/frontend")
+}
+
+
+import org.gradle.internal.os.OperatingSystem
+
+task buildAngular(type: NpmTask, dependsOn: 'npm_install') {
+	group = 'Angular'
+	description = 'Bygg Angular-applikationen och kopiera de genererade filerna till Spring Boot-projektet'
+
+	if (OperatingSystem.current().isWindows()) {
+		execOverrides {
+			it.environment += ['PATH': "${project.node.nodeModulesDir}/.bin" + File.pathSeparator + System.getenv('PATH')]
+		}
+	} else {
+		environment(['PATH': "${project.node.nodeModulesDir}/.bin" + File.pathSeparator + System.getenv('PATH')])
+	}
+
+	inputs.dir("frontend/src")
+	inputs.file("frontend/angular.json")
+	outputs.dir("frontend/dist")
+
+	args = ['run', 'build', '--', '--configuration', 'production']
+	doLast {
+		copy {
+			from 'frontend/dist/my-angular-app'
+			into 'src/main/resources/static'
+		}
+	}
+}
+
+
+bootRun.dependsOn buildAngular
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
