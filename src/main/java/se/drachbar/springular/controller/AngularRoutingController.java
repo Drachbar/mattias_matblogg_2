@@ -12,7 +12,7 @@ public class AngularRoutingController {
     @Value("classpath:static/index.html")
     private Resource appIndex;
 
-    @GetMapping("/{page:^(?!^assets)(?:[a-z\\d\\-\\/]+)$}")
+    @GetMapping("/{page:^(?!^assets|api)(?:[a-z\\d\\-\\/]+)$}")
     public ResponseEntity<Resource> index() {
         return ResponseEntity.ok().body(appIndex);
     }
