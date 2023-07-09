@@ -8,8 +8,11 @@ import lombok.Data;
 @Table(name = "tbl_user")
 public class User {
     @Id
+    private Long idUser;
+
     @OneToOne
+    @MapsId
     @JoinColumn(name = "id_user")
-    private LoginCredentials idUser;
+    private LoginCredentials loginCredentials;
     private String username;
 }
